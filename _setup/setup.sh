@@ -31,3 +31,7 @@ conda create --name automation python=3.11
 
 # list the environments
 conda env list
+
+
+# Install azure cli
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
