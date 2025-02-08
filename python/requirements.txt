@@ -7,3 +7,6 @@ seaborn
 flask 
 memory_profiler 
 scikit-learn
+python-dotenv
+
+
