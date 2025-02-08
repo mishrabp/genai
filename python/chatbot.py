@@ -1,8 +1,13 @@
+import os
 import streamlit as st
 import openai
+from dotenv import load_dotenv
+
+#load .env file
+load_dotenv()
 
 # Set OpenAI API key (Replace with your API key)
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = os.getenv("OPENAI_API_KEY") #"YOUR_OPENAI_API_KEY"
 
 # Function to generate chatbot response
 def chatbot_response(prompt):
