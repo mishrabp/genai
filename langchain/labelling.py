@@ -262,10 +262,10 @@ if __name__ == "__main__":
     print(f"zero-shot-promt token size is {token_size} and accuracy is {accuracy}")
 
 
-    token_size, accuracy = PropmtEvaluator.evaluate_few_shot_promt(gold_test_data)
+    token_size, accuracy = PropmtEvaluator.evaluate_few_shot_promt(examples_df,gold_test_data)
     print(f"few-shot-promt token size is {token_size} and accuracy is {accuracy}")
 
 
-    token_size, accuracy = PropmtEvaluator.evaluate_cot_promt(gold_test_data)
+    token_size, accuracy = PropmtEvaluator.evaluate_cot_promt(examples_df,gold_test_data)
     print(f"cot-promt token size is {token_size} and accuracy is {accuracy}")
 
