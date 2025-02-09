@@ -246,7 +246,7 @@ class PropmtEvaluator:
 if __name__ == "__main__":
 
     ## Prepare data for example and testing
-    data = pd.read_csv("/mnt/c/Users/msuni/genai/_data/auto-labelling.csv")
+    data = pd.read_csv("../_data/auto-labelling.csv")
     examples_df, gold_test_df = train_test_split(
         data, #<- the full dataset
         test_size=0.8, #<- 80% random sample selected for gold examples
