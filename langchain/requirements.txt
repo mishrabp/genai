@@ -3,4 +3,9 @@ langchain_core
 langchain_openai
 session_info
 tiktoken
+pandas
+datasets
+tqdm
+scikit-learn
+python-dotenv
 
