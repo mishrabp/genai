@@ -49,6 +49,7 @@ class Classification:
 
         print(response)
 
+
 user_message_template = """```{description}```"""
 
 few_shot_system_message = """Classify the following product desciption presented in the input into one of the following categories.
@@ -91,7 +92,7 @@ class PropmtEvaluator:
         return chain
 
     @staticmethod
-    def __evaluate_prompt(prompt, gold_test_data, user_message_template,samples_to_output = 1):
+    def __evaluate_prompt(prompt, gold_examples, user_message_template,samples_to_output = 5):
 
         """
         Return the accuracy score for predictions on gold examples.
@@ -114,7 +115,8 @@ class PropmtEvaluator:
 
         # Iterating through all the gold examples and constructing the messages dictionary using the text from example
 
-        for example in json.loads(gold_test_data):
+        for example in json.loads(gold_examples):
+            
             gold_input = example['description']
             user_input = [
                 {
@@ -124,21 +126,12 @@ class PropmtEvaluator:
             ]
 
             try:
-                # response = client.chat.completions.create(
-                #     model=deployment_name,
-                #     messages=prompt+user_input,
-                #     temperature=0, # <- Note the low temperature
-                #     max_tokens=4 # <- Note how we restrict the output to not more than 2 tokens
-                # )
-
-                # prediction = response.choices[0].message.content
                 prediction=PropmtEvaluator.get_chain().invoke(prompt+user_input,
-                    config={"temperature": 0.5, "max_tokens": 4})
+                    config={"temperature": 0, "max_tokens": 4})
+                
                 while count < samples_to_output:
                     count += 1
-                print("Original label: \n", example['task'],"\n")
-                print("Predicted label: \n", prediction)
-
+                    print(f"{count}-Original label: {example['task']} - Predicated label: {prediction}")
 
                 model_predictions.append(prediction.strip().lower()) # <- removes extraneous white space and lowercases output
                 ground_truths.append(example['task'].strip().lower())
@@ -147,9 +140,7 @@ class PropmtEvaluator:
                 print(e)
                 continue
 
-
         # Find the accuracy of each category.
-
         df = pd.DataFrame({
         'Predictions': model_predictions,
         'Ground Truth': ground_truths
@@ -246,17 +237,17 @@ class PropmtEvaluator:
         return few_shot_prompt
 
     @staticmethod
-    def evaluate_zero_shot_promt(gold_test_data):
+    def evaluate_zero_shot_promt(gold_examples):
         zero_shot_prompt = [{'role':'system', 'content': zero_shot_system_message}]
 
         token_size = LLM.num_tokens_from_messages(zero_shot_prompt)
 
-        accuracy = PropmtEvaluator.__evaluate_prompt(zero_shot_prompt, gold_test_data, user_message_template)
+        accuracy = PropmtEvaluator.__evaluate_prompt(zero_shot_prompt, gold_examples, user_message_template)
 
         return token_size, accuracy
     
     @staticmethod
-    def evaluate_few_shot_promt(examples_df, gold_test_data):
+    def evaluate_few_shot_promt(examples_df, gold_examples):
 
         few_shot_examples = PropmtEvaluator.__create_examples(examples_df, 2)
 
@@ -264,49 +255,39 @@ class PropmtEvaluator:
 
         token_size = LLM.num_tokens_from_messages(few_shot_prompt)
 
-        accuracy = PropmtEvaluator.__evaluate_prompt(few_shot_prompt, gold_test_data, user_message_template)
+        accuracy = PropmtEvaluator.__evaluate_prompt(few_shot_prompt, gold_examples, user_message_template)
 
         return token_size, accuracy
 
-
-    @staticmethod
-    def evaluate_cot_promt(examples_df, gold_test_data):
-
-        few_shot_examples = PropmtEvaluator.__create_examples(examples_df, 2)
-
-        cot_few_shot_prompt = PropmtEvaluator.__create_prompt(cot_system_message,few_shot_examples,user_message_template)
-
-        token_size = LLM.num_tokens_from_messages(cot_few_shot_prompt)
-
-        accuracy = PropmtEvaluator.__evaluate_prompt(cot_few_shot_prompt, gold_test_data, user_message_template)
-
-        return token_size, accuracy
-
-    @staticmethod
-    def compare_few_shot_vs_cot_promt(examples_df, gold_test_data):
-        num_eval_runs = 5
-        few_shot_performance, cot_few_shot_performance = [], []
-
-        for _ in tqdm(range(num_eval_runs)):
-            # For each run create a new sample of examples
-            examples = PropmtEvaluator.__create_examples(examples_df)
-
-            # Assemble the few shot prompt with these examples
-            few_shot_prompt = PropmtEvaluator.__create_prompt(few_shot_system_message, examples, user_message_template)
-            cot_few_shot_prompt = PropmtEvaluator.__create_prompt(cot_system_message, examples, user_message_template)
-
-            # Evaluate prompt accuracy on gold examples
-            few_shot_accuracy = PropmtEvaluator.__evaluate_prompt(few_shot_prompt, gold_test_data, user_message_template)
-            cot_few_shot_accuracy = PropmtEvaluator.__evaluate_prompt(cot_few_shot_prompt, gold_test_data, user_message_template)
-
-            few_shot_performance.append(few_shot_accuracy)
-            cot_few_shot_performance.append(cot_few_shot_accuracy)
-
-        few_shot_std= np.array(few_shot_performance).mean(), np.array(few_shot_performance).std()
-        cot_few_shot_std=np.array(cot_few_shot_performance).mean(), np.array(cot_few_shot_performance).std()
-
-        print(f"Standard deviation in few-shot-prompt performance {few_shot_std}.")
-        print(f"Standard deviation in cot-few-shot-prompt performance {cot_few_shot_std}.")
 
 if __name__ == "__main__":
-    Classification.find_top_5_category()
+    ##Step1: Find the top 3 category
+    #Classification.find_top_5_category()
+
+    ##Step2: Use the top 3 category to sample a set of data in "customer_intent_labeled.csv".
+
+    ##Step3: Now let's evaluate which prompt gives us the accuracy in labeling them automatically. 
+    #############################################################################################
+
+    ## Prepare data for example and testing
+    dataset_df = pd.read_csv("../_data/customer_intent_labeled.csv")
+    examples_df, gold_examples_df = train_test_split(
+        dataset_df, #<- the full dataset
+        test_size=0.6, #<- 80% random sample selected for gold examples
+        random_state=42, #<- ensures that the splits are the same for every session
+    )
+
+
+    num_eval_runs = 1
+    few_shot_performance = []
+    ## Perform evaluation multiple times with random set of data
+    for _ in tqdm(range(num_eval_runs)):
+
+        # gold_examples = json.loads((gold_examples_df.sample(100, random_state=42).to_json(orient='records')))
+        gold_examples = (gold_examples_df.sample(100, random_state=42).to_json(orient='records'))
+        # print(gold_examples)
+
+        token_size, few_shot_accuracy = PropmtEvaluator.evaluate_few_shot_promt(examples_df, gold_examples)
+
+        few_shot_performance.append(few_shot_accuracy)
+

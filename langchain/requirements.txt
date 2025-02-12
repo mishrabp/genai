@@ -8,4 +8,9 @@ datasets
 tqdm
 scikit-learn
 python-dotenv
-
+pytubefix==7.4.0 
+evaluate 
+bert_score 
+openai-whisper
+yt_dlp
+IPython
