@@ -37,7 +37,9 @@ class RAG:
         collection_name = 'reports_collection'
 
         # Initiate the embedding momdel 'thenlper/gte-large'
-        embedding_model = SentenceTransformerEmbeddings(model_name='thenlper/gte-large')
+        # embedding_model = SentenceTransformerEmbeddings(model_name='thenlper/gte-large')
+        # Initialize the embedding model
+        embedding_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
         report_chunks = self.__split_docs_into_chunks()
 
